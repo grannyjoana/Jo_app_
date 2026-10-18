@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="營業員試溫習通">
 <meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>營業員試溫習通</title>
 <style>
 :root{--bg:#f6f7f9;--card:#fff;--ink:#1c2430;--mut:#6b7686;--pri:#0f766e;--bd:#e3e7ec;--nav:64px}
@@ -18,15 +20,25 @@ h1{font-size:22px;margin:0 0 12px}h2{font-size:17px;margin:0 0 8px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
 .big{font-size:44px;font-weight:700;color:var(--pri);line-height:1.1}
 .mut{color:var(--mut);font-size:14px}
-input[type=date]{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--ink)}
+input[type=date],input[type=search]{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--ink);width:100%}
+button{font:inherit;padding:8px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--ink)}
+button.p{background:var(--pri);color:#fff;border-color:var(--pri)}
 label.ck{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
 label.ck input{width:22px;height:22px;accent-color:var(--pri)}
-a.link{display:block;padding:12px 0;border-top:1px solid var(--bd);color:var(--pri);text-decoration:none}
-nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;background:var(--card);border-top:1px solid var(--bd)}
-nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px}
+a.link,.row{display:block;padding:12px 0;border-top:1px solid var(--bd);color:var(--pri);text-decoration:none}
+.row{color:var(--ink)}.row b{color:var(--pri)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chips button.on{background:var(--pri);color:#fff}
+.q{font-size:18px;min-height:90px}.a{display:none;border-top:1px dashed var(--bd);padding-top:10px;margin-top:10px}
+.a.on{display:block}.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;background:var(--card);border-top:1px solid var(--bd);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;padding:0}
 nav button b{display:block;font-size:20px;font-weight:400}
 nav button.on{color:var(--pri);font-weight:600}
-/* 橫向:變側欄,唔係放大桌面版 */
+#view{display:none;position:fixed;inset:0;z-index:20;background:var(--bg);flex-direction:column}
+#vbar{display:flex;gap:6px;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 8px 8px;border-bottom:1px solid var(--bd);background:var(--card)}
+#vbar span{flex:1;text-align:center;font-size:14px}
+#vbody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
 @media(orientation:landscape) and (max-height:520px){
  nav{top:0;right:auto;width:calc(88px + env(safe-area-inset-left));height:auto;flex-direction:column;border-top:0;border-right:1px solid var(--bd);padding:env(safe-area-inset-top) 0 0 env(safe-area-inset-left)}
  main{margin-left:calc(88px + env(safe-area-inset-left));padding-bottom:24px;max-width:760px}
@@ -37,38 +49,62 @@ nav button.on{color:var(--pri);font-weight:600}
 <main>
  <section id="home" class="on">
   <h1>主頁</h1>
-  <div class="card"><h2>考試倒數</h2>
-   <div class="big" id="days">--</div>
-   <p class="mut" id="dtxt">請揀考試日期</p>
-   <input type="date" id="exam"></div>
-  <div class="card"><h2>溫習清單</h2><div id="list"></div>
-   <p class="mut" id="prog"></p></div>
-  <div class="card"><h2>備份</h2>
+  <div class="card"><h2>考試倒數</h2><div class="big" id="days">--</div>
+   <p class="mut" id="dtxt">請揀考試日期</p><input type="date" id="exam"></div>
+  <div class="card"><h2>溫習清單</h2><div id="list"></div><p class="mut" id="prog"></p></div>
+  <div class="card"><h2>備份(進度、收藏,唔包 PDF)</h2>
    <button onclick="exp()">匯出</button>
-   <input type="file" id="imp" accept=".json" style="display:none">
-   <button onclick="imp.click()">匯入</button></div>
+   <button onclick="$('imp').click()">匯入</button>
+   <input type="file" id="imp" accept=".json" style="display:none"></div>
  </section>
+
  <section id="topics"><h1>專項</h1>
-  <div class="card">個案分析、虛構查冊、表格 1–6 點用、規管、轉易、租務(開發中)</div></section>
+  <div class="chips" id="cats"></div>
+  <div class="card" id="fc"></div>
+  <p class="mut" id="fstat"></p>
+ </section>
+
  <section id="mine"><h1>我的資料</h1>
-  <div class="card">上傳 PDF、關鍵字搜尋、收藏(開發中)</div></section>
+  <div class="card"><h2>上傳 PDF</h2>
+   <input type="file" id="pdf" accept="application/pdf" multiple>
+   <p class="mut" id="pstat">PDF 只存喺你部手機,唔會上傳。</p></div>
+  <div class="card"><h2>關鍵字搜尋</h2>
+   <input type="search" id="kw" placeholder="例如:查冊"><div class="btns"><button class="p" onclick="search()">搜尋</button></div>
+   <div id="res"></div></div>
+  <div class="card"><h2>⭐ 收藏</h2><div id="favs"></div></div>
+  <div class="card"><h2>已存檔案</h2><div id="files"></div></div>
+ </section>
+
  <section id="portal"><h1>官方入口</h1><div class="card" id="links"></div></section>
- <section id="quiz"><h1>模擬試題</h1>
-  <div class="card">自編練習題(開發中,非官方題目)</div></section>
+ <section id="quiz"><h1>模擬試題</h1><div class="card">自編練習題(v0.5,非官方題目)</div></section>
 </main>
 <nav id="nav"></nav>
+
+<div id="view">
+ <div id="vbar"><button onclick="closeV()">✕</button><button onclick="mv(-1)">◀</button>
+  <span id="vt"></span><button onclick="mv(1)">▶</button><button id="vs" onclick="favCur()">☆</button></div>
+ <div id="vbody"><canvas id="cv"></canvas></div>
+</div>
+
+<script src="lib/pdf.min.js"></script>
 <script>
+pdfjsLib.GlobalWorkerOptions.workerSrc="lib/pdf.worker.min.js";
 const TABS=[["home","🏠","主頁"],["topics","🎯","專項"],["mine","📁","資料"],["portal","🔗","官方"],["quiz","✍️","模擬"]];
 const CHECK=["學習指引:前言、免責聲明","第一章 香港的地產代理行業","第二章 《地產代理條例》及附屬法例","第三章 其他規管法律及物業轉易程序","第四章 土地註冊、查冊及物業資料系統","第五章 樓宇知識、物業分類及物業管理","第七章 租契及租約事宜","附錄一 第四章附註","表格:物業資料表格(住宅買賣)","表格:出租資料表格(住宅出租)","表格:出售/購買/出租/承租 地產代理協議","做一次網上模擬試"];
-// 官方網址請自己貼上確實頁面,唔好靠估
 const LINKS=[["考試手冊頁","https://www.eaa.org.hk"],["網上模擬試","https://www.eaa.org.hk"],["通告目錄","https://www.eaa.org.hk"],["學習指引目錄","https://www.eaa.org.hk"]];
 const K="s牌v1",$=i=>document.getElementById(i);
-let S=JSON.parse(localStorage.getItem(K)||'{"exam":"","done":{}}');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let S=Object.assign({exam:"",done:{},cards:{},fav:[]},JSON.parse(localStorage.getItem(K)||"{}"));
 const save=()=>localStorage.setItem(K,JSON.stringify(S));
+
+/* ---------- 導航 ---------- */
 function go(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id==id));
- [...$("nav").children].forEach(b=>b.classList.toggle("on",b.dataset.t==id));history.replaceState(0,"","#"+id)}
+ [...$("nav").children].forEach(b=>b.classList.toggle("on",b.dataset.t==id));history.replaceState(0,"","#"+id);
+ if(id=="mine")listMine()}
 $("nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" onclick="go('${t[0]}')"><b>${t[1]}</b>${t[2]}</button>`).join("");
 $("links").innerHTML=LINKS.map(l=>`<a class="link" href="${l[1]}" target="_blank" rel="noopener">${l[0]} ↗</a>`).join("");
+
+/* ---------- 主頁 ---------- */
 function render(){
  $("exam").value=S.exam;
  if(S.exam){const d=Math.ceil((new Date(S.exam+"T00:00")-new Date().setHours(0,0,0,0))/864e5);
@@ -78,7 +114,72 @@ function render(){
 function tg(i){S.done[i]=!S.done[i];save();render()}
 $("exam").onchange=e=>{S.exam=e.target.value;save();render()};
 function exp(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)]));a.download="s牌備份.json";a.click()}
-$("imp").onchange=async e=>{S=JSON.parse(await e.target.files[0].text());save();render()};
+$("imp").onchange=async e=>{try{S=Object.assign(S,JSON.parse(await e.target.files[0].text()));save();render();fcRender()}catch(x){alert("檔案唔啱")}};
+
+/* ---------- v0.2 閃卡 ---------- */
+let CARDS=[],cat="全部",deck=[],ci=0;
+fetch("cards.json").then(r=>r.json()).then(j=>{CARDS=j;initCats()}).catch(()=>{$("fc").textContent="讀唔到 cards.json"});
+function initCats(){const cs=["全部","未掌握",...new Set(CARDS.map(c=>c.cat))];
+ $("cats").innerHTML=cs.map(c=>`<button data-c="${c}" onclick="pick('${c}')">${c}</button>`).join("");pick("全部")}
+function pick(c){cat=c;[...$("cats").children].forEach(b=>b.classList.toggle("on",b.dataset.c==c));
+ deck=CARDS.filter(x=>c=="全部"||(c=="未掌握"?S.cards[x.id]!=="ok":x.cat==c));
+ for(let i=deck.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[deck[i],deck[j]]=[deck[j],deck[i]]}
+ ci=0;fcRender()}
+function fcRender(){
+ if(!deck.length){$("fc").innerHTML="呢類冇題目 🎉";$("fstat").textContent="";return}
+ const c=deck[ci];
+ $("fc").innerHTML=`<div class="mut">${esc(c.cat)}</div><div class="q">${esc(c.q)}</div>
+  <div class="a" id="ans">${esc(c.a)}<div class="mut">出處:${esc(c.src||"未填")}</div></div>
+  <div class="btns"><button class="p" onclick="$('ans').classList.add('on')">睇答案</button>
+  <button onclick="mark('ok')">✅ 識</button><button onclick="mark('no')">❌ 唔識</button></div>`;
+ const ok=CARDS.filter(x=>S.cards[x.id]==="ok").length;
+ $("fstat").textContent=`第 ${ci+1}/${deck.length} 張 · 總掌握 ${ok}/${CARDS.length}`}
+function mark(v){S.cards[deck[ci].id]=v;save();ci=(ci+1)%deck.length;fcRender()}
+
+/* ---------- v0.3 PDF ---------- */
+const DB=new Promise((res,rej)=>{const r=indexedDB.open("s牌db",1);r.onupgradeneeded=()=>r.result.createObjectStore("files",{keyPath:"id"});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function tx(mode,f){const db=await DB;return new Promise((res,rej)=>{const t=db.transaction("files",mode);const q=f(t.objectStore("files"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})}
+$("pdf").onchange=async e=>{for(const f of e.target.files)await addPdf(f);e.target.value="";listMine()};
+async function addPdf(file){
+ try{const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;const texts=[];
+  for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const c=await pg.getTextContent();
+   texts.push(c.items.map(x=>x.str).join(" "));$("pstat").textContent=`讀取「${file.name}」 ${i}/${pdf.numPages}`}
+  await tx("readwrite",s=>s.put({id:Date.now()+Math.random(),name:file.name,n:pdf.numPages,texts,buf}));
+  const avg=texts.join("").length/pdf.numPages;
+  $("pstat").textContent=avg<30?`⚠️ 「${file.name}」幾乎讀唔到文字,好可能係掃描圖片,搜尋唔會有用。`:`✅ 已存「${file.name}」`
+ }catch(x){$("pstat").textContent="❌ 讀取失敗:"+x.message}}
+async function listMine(){
+ const fs=await tx("readonly",s=>s.getAll());
+ $("files").innerHTML=fs.map(f=>`<div class="row"><b onclick="openPdf(${f.id},1)">${esc(f.name)}</b> <span class="mut">${f.n} 頁</span> <button onclick="del(${f.id})">刪除</button></div>`).join("")||'<p class="mut">未有檔案</p>';
+ $("favs").innerHTML=S.fav.map((v,i)=>`<div class="row" onclick="openPdf(${v.f},${v.p})">⭐ ${esc(v.name)} · 第 ${v.p} 頁</div>`).join("")||'<p class="mut">未有收藏</p>'}
+async function del(id){if(!confirm("刪除呢個檔案?"))return;await tx("readwrite",s=>s.delete(id));S.fav=S.fav.filter(v=>v.f!=id);save();listMine()}
+async function search(){
+ const q=$("kw").value.trim().toLowerCase();if(!q)return;
+ const fs=await tx("readonly",s=>s.getAll());const out=[];
+ fs.forEach(f=>f.texts.forEach((t,i)=>{const j=t.toLowerCase().indexOf(q);
+  if(j>=0)out.push({f:f.id,p:i+1,name:f.name,sn:t.slice(Math.max(0,j-20),j+70)})}));
+ $("res").innerHTML=(out.length>50?`<p class="mut">只顯示頭 50 項,共 ${out.length} 項</p>`:"")+
+  (out.slice(0,50).map(r=>`<div class="row" onclick="openPdf(${r.f},${r.p})"><b>${esc(r.name)} · 第 ${r.p} 頁</b><br><span class="mut">…${esc(r.sn)}…</span></div>`).join("")||'<p class="mut">搵唔到</p>')}
+let cur=null;
+async function openPdf(id,p){
+ const f=await tx("readonly",s=>s.get(id));if(!f)return;
+ cur={id,p,n:f.n,name:f.name,pdf:await pdfjsLib.getDocument({data:f.buf.slice(0)}).promise};
+ $("view").style.display="flex";showPg()}
+async function showPg(){
+ const pg=await cur.pdf.getPage(cur.p),box=$("vbody"),w=box.clientWidth;
+ const sc=w/pg.getViewport({scale:1}).width,v=pg.getViewport({scale:sc*(devicePixelRatio||1)}),c=$("cv");
+ c.width=v.width;c.height=v.height;c.style.width=w+"px";
+ await pg.render({canvasContext:c.getContext("2d"),viewport:v}).promise;box.scrollTop=0;
+ $("vt").textContent=`${cur.name} ${cur.p}/${cur.n}`;
+ $("vs").textContent=S.fav.some(v=>v.f==cur.id&&v.p==cur.p)?"⭐":"☆"}
+function mv(d){const p=cur.p+d;if(p<1||p>cur.n)return;cur.p=p;showPg()}
+function favCur(){const i=S.fav.findIndex(v=>v.f==cur.id&&v.p==cur.p);
+ i>=0?S.fav.splice(i,1):S.fav.push({f:cur.id,p:cur.p,name:cur.name});save();showPg()}
+function closeV(){$("view").style.display="none";cur=null;listMine()}
+
+/* ---------- v0.4 離線 ---------- */
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
 render();go(location.hash.slice(1)||"home");
 </script>
 </body>
