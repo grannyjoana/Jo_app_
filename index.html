@@ -21,6 +21,7 @@ h1{font-size:22px;margin:0 0 12px}h2{font-size:17px;margin:0 0 8px}
 .big{font-size:44px;font-weight:700;color:var(--pri);line-height:1.1}
 .mut{color:var(--mut);font-size:14px}
 input[type=date],input[type=search]{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--ink);width:100%}
+textarea{width:100%;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--ink);margin-bottom:8px}
 button{font:inherit;padding:8px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--ink)}
 button.p{background:var(--pri);color:#fff;border-color:var(--pri)}
 label.ck{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
@@ -31,6 +32,9 @@ a.link,.row{display:block;padding:12px 0;border-top:1px solid var(--bd);color:va
 .chips button.on{background:var(--pri);color:#fff}
 .q{font-size:18px;min-height:90px}.a{display:none;border-top:1px dashed var(--bd);padding-top:10px;margin-top:10px}
 .a.on{display:block}.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.opt{display:block;width:100%;text-align:left;margin-bottom:8px}
+.opt.good{background:#16a34a;color:#fff;border-color:#16a34a}
+.opt.bad{background:#dc2626;color:#fff;border-color:#dc2626}
 nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;background:var(--card);border-top:1px solid var(--bd);z-index:5}
 nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;padding:0}
 nav button b{display:block;font-size:20px;font-weight:400}
@@ -52,7 +56,7 @@ nav button.on{color:var(--pri);font-weight:600}
   <div class="card"><h2>考試倒數</h2><div class="big" id="days">--</div>
    <p class="mut" id="dtxt">請揀考試日期</p><input type="date" id="exam"></div>
   <div class="card"><h2>溫習清單</h2><div id="list"></div><p class="mut" id="prog"></p></div>
-  <div class="card"><h2>備份(進度、收藏,唔包 PDF)</h2>
+  <div class="card"><h2>備份(進度、收藏、匯入習題,唔包 PDF)</h2>
    <button onclick="exp()">匯出</button>
    <button onclick="$('imp').click()">匯入</button>
    <input type="file" id="imp" accept=".json" style="display:none"></div>
@@ -62,6 +66,14 @@ nav button.on{color:var(--pri);font-weight:600}
   <div class="chips" id="cats"></div>
   <div class="card" id="fc"></div>
   <p class="mut" id="fstat"></p>
+  <label class="ck"><input type="checkbox" id="auto" onchange="S.auto=this.checked;save()">答啱自動下一題</label>
+  <div class="card"><h2>匯入習題</h2>
+   <p class="mut">問答:類別|題目|答案|出處<br>MC:類別|題目|選項一;選項二;選項三|B|出處</p>
+   <textarea id="ib" rows="5" placeholder="貼上習題"></textarea>
+   <input type="file" id="qf" accept=".txt,.json,.csv">
+   <div class="btns"><button class="p" onclick="doImp()">匯入</button>
+   <button onclick="expMine()">匯出習題</button><button onclick="clrMine()">清空</button></div>
+   <p class="mut" id="istat"></p></div>
  </section>
 
  <section id="mine"><h1>我的資料</h1>
@@ -76,7 +88,7 @@ nav button.on{color:var(--pri);font-weight:600}
  </section>
 
  <section id="portal"><h1>官方入口</h1><div class="card" id="links"></div></section>
- <section id="quiz"><h1>模擬試題</h1><div class="card">自編練習題(v0.5,非官方題目)</div></section>
+ <section id="quiz"><h1>模擬試題</h1><div class="card">計時、兩部分分開計分(v0.9,開發中)</div></section>
 </main>
 <nav id="nav"></nav>
 
@@ -90,11 +102,17 @@ nav button.on{color:var(--pri);font-weight:600}
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc="lib/pdf.worker.min.js";
 const TABS=[["home","🏠","主頁"],["topics","🎯","專項"],["mine","📁","資料"],["portal","🔗","官方"],["quiz","✍️","模擬"]];
-const CHECK=["學習指引:前言、免責聲明","第一章 香港的地產代理行業","第二章 《地產代理條例》及附屬法例","第三章 其他規管法律及物業轉易程序","第四章 土地註冊、查冊及物業資料系統","第五章 樓宇知識、物業分類及物業管理","第七章 租契及租約事宜","附錄一 第四章附註","表格:物業資料表格(住宅買賣)","表格:出租資料表格(住宅出租)","表格:出售/購買/出租/承租 地產代理協議","做一次網上模擬試"];
-const LINKS=[["考試手冊頁","https://www.eaa.org.hk"],["網上模擬試","https://www.eaa.org.hk"],["通告目錄","https://www.eaa.org.hk"],["學習指引目錄","https://www.eaa.org.hk"]];
+const CHECK=["對照官方營業員考試綱要,逐項剔","學習指引:前言、免責聲明","第一章 香港的地產代理行業","第二章 《地產代理條例》及附屬法例","第三章 其他規管法律及物業轉易程序","第四章 土地註冊、查冊及物業資料系統","第五章 樓宇知識、物業分類及物業管理","第七章 租契及租約事宜","附錄一 第四章附註","表格:物業資料表格(住宅買賣)","表格:出租資料表格(住宅出租)","表格:出售/購買/出租/承租 地產代理協議","做一次網上模擬試"];
+const LINKS=[
+["考試手冊頁(英文版)","https://www.eaa.org.hk/en-us/Examination/Examination-Handbook"],
+["網上模擬試","https://eaa.org.hk/en-us/Examination/Online-Mock-Examination"],
+["手冊 PDF(紙筆版,含營業員綱要)","https://www.eaa.org.hk/Portals/0/Sections/Exam/Handbook/PBE_HB_202609_eng.pdf"],
+["手冊 PDF(電腦版,含營業員綱要)","https://eaa.org.hk/Portals/0/Sections/Exam/Handbook/CBE_HB_202609_eng.pdf"],
+["通告目錄(待貼確實網址)","https://www.eaa.org.hk"],
+["學習指引目錄(待貼確實網址)","https://www.eaa.org.hk"]];
 const K="s牌v1",$=i=>document.getElementById(i);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let S=Object.assign({exam:"",done:{},cards:{},fav:[]},JSON.parse(localStorage.getItem(K)||"{}"));
+let S=Object.assign({exam:"",done:{},cards:{},fav:[],my:[],auto:false},JSON.parse(localStorage.getItem(K)||"{}"));
 const save=()=>localStorage.setItem(K,JSON.stringify(S));
 
 /* ---------- 導航 ---------- */
@@ -106,7 +124,7 @@ $("links").innerHTML=LINKS.map(l=>`<a class="link" href="${l[1]}" target="_blank
 
 /* ---------- 主頁 ---------- */
 function render(){
- $("exam").value=S.exam;
+ $("exam").value=S.exam;$("auto").checked=!!S.auto;
  if(S.exam){const d=Math.ceil((new Date(S.exam+"T00:00")-new Date().setHours(0,0,0,0))/864e5);
   $("days").textContent=d>0?d+" 日":d==0?"今日考試!":"已過期";$("dtxt").textContent="考試日期:"+S.exam}
  $("list").innerHTML=CHECK.map((c,i)=>`<label class="ck"><input type="checkbox" ${S.done[i]?"checked":""} onchange="tg(${i})">${c}</label>`).join("");
@@ -114,29 +132,62 @@ function render(){
 function tg(i){S.done[i]=!S.done[i];save();render()}
 $("exam").onchange=e=>{S.exam=e.target.value;save();render()};
 function exp(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)]));a.download="s牌備份.json";a.click()}
-$("imp").onchange=async e=>{try{S=Object.assign(S,JSON.parse(await e.target.files[0].text()));save();render();fcRender()}catch(x){alert("檔案唔啱")}};
+$("imp").onchange=async e=>{try{S=Object.assign(S,JSON.parse(await e.target.files[0].text()));save();render();initCats()}catch(x){alert("檔案唔啱")}};
 
-/* ---------- v0.2 閃卡 ---------- */
-let CARDS=[],cat="全部",deck=[],ci=0;
-fetch("cards.json").then(r=>r.json()).then(j=>{CARDS=j;initCats()}).catch(()=>{$("fc").textContent="讀唔到 cards.json"});
-function initCats(){const cs=["全部","未掌握",...new Set(CARDS.map(c=>c.cat))];
- $("cats").innerHTML=cs.map(c=>`<button data-c="${c}" onclick="pick('${c}')">${c}</button>`).join("");pick("全部")}
+/* ---------- 專項:閃卡 + MC ---------- */
+let CARDS=[],cat="全部",deck=[],ci=0,locked=false;
+const all=()=>CARDS.concat(S.my);
+fetch("cards.json").then(r=>r.json()).then(j=>{CARDS=j}).catch(()=>{}).then(initCats);
+function initCats(){const cs=["全部","未掌握",...new Set(all().map(c=>c.cat))];
+ $("cats").innerHTML=cs.map(c=>`<button data-c="${esc(c)}" onclick="pick(this.dataset.c)">${esc(c)}</button>`).join("");
+ pick(cs.includes(cat)?cat:"全部")}
 function pick(c){cat=c;[...$("cats").children].forEach(b=>b.classList.toggle("on",b.dataset.c==c));
- deck=CARDS.filter(x=>c=="全部"||(c=="未掌握"?S.cards[x.id]!=="ok":x.cat==c));
+ deck=all().filter(x=>c=="全部"||(c=="未掌握"?S.cards[x.id]!=="ok":x.cat==c));
  for(let i=deck.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[deck[i],deck[j]]=[deck[j],deck[i]]}
  ci=0;fcRender()}
 function fcRender(){
+ locked=false;
  if(!deck.length){$("fc").innerHTML="呢類冇題目 🎉";$("fstat").textContent="";return}
- const c=deck[ci];
- $("fc").innerHTML=`<div class="mut">${esc(c.cat)}</div><div class="q">${esc(c.q)}</div>
-  <div class="a" id="ans">${esc(c.a)}<div class="mut">出處:${esc(c.src||"未填")}</div></div>
-  <div class="btns"><button class="p" onclick="$('ans').classList.add('on')">睇答案</button>
-  <button onclick="mark('ok')">✅ 識</button><button onclick="mark('no')">❌ 唔識</button></div>`;
- const ok=CARDS.filter(x=>S.cards[x.id]==="ok").length;
- $("fstat").textContent=`第 ${ci+1}/${deck.length} 張 · 總掌握 ${ok}/${CARDS.length}`}
+ const c=deck[ci],A=all(),L="ABCD",mc=Array.isArray(c.opts)&&c.opts.length>1;
+ const opts=mc?c.opts.map((o,i)=>`<button class="opt" data-l="${L[i]}" onclick="choose(${i})">${L[i]}. ${esc(o)}</button>`).join(""):"";
+ const at=mc?`${esc(c.a)}. ${esc(c.opts[L.indexOf(c.a)]||"")}`:esc(c.a);
+ const btns=mc?`<button id="nx" class="p" style="display:none" onclick="nextC()">下一題 ▶</button>`
+  :`<button class="p" onclick="$('ans').classList.add('on')">睇答案</button><button onclick="mark('ok')">✅ 識</button><button onclick="mark('no')">❌ 唔識</button>`;
+ $("fc").innerHTML=`<div class="mut">${esc(c.cat)}</div><div class="q">${esc(c.q)}</div>${opts}
+  <div class="a" id="ans">答案:${at}<div class="mut">出處:${esc(c.src||"未填")}</div></div><div class="btns">${btns}</div>`;
+ $("fstat").textContent=`第 ${ci+1}/${deck.length} 張 · 總掌握 ${A.filter(x=>S.cards[x.id]==="ok").length}/${A.length}`}
+function choose(i){if(locked)return;locked=true;
+ const c=deck[ci],L="ABCD",ok=L[i]===c.a;S.cards[c.id]=ok?"ok":"no";save();
+ document.querySelectorAll(".opt").forEach(b=>{if(b.dataset.l===c.a)b.classList.add("good");else if(b.dataset.l===L[i])b.classList.add("bad")});
+ $("ans").classList.add("on");$("nx").style.display="inline-block";
+ if(ok&&S.auto)setTimeout(()=>{if(locked&&deck[ci]===c)nextC()},1200)}
+function nextC(){ci=(ci+1)%deck.length;fcRender()}
 function mark(v){S.cards[deck[ci].id]=v;save();ci=(ci+1)%deck.length;fcRender()}
 
-/* ---------- v0.3 PDF ---------- */
+/* ---------- 匯入習題 ---------- */
+function parseQ(t){t=t.trim();
+ if(t[0]=="[")return JSON.parse(t);
+ return t.split(/\r?\n/).map(l=>l.split(/[|｜]/).map(x=>x.trim())).filter(p=>p.length>=3).map(p=>{
+  const mc=/[;；]/.test(p[2])&&/^[A-Da-d]$/.test(p[3]||"");
+  return mc?{cat:p[0],q:p[1],opts:p[2].split(/[;；]/).map(x=>x.trim()).filter(Boolean).slice(0,4),a:p[3].toUpperCase(),src:p[4]||""}
+          :{cat:p[0],q:p[1],a:p[2],src:p[3]||""}})}
+function doImp(){try{
+ const rows=parseQ($("ib").value).filter(r=>{
+  if(!r||!r.q||!r.a)return false;
+  if(r.opts){const k="ABCD".indexOf(String(r.a).toUpperCase());return k>=0&&k<r.opts.length}
+  return true});
+ if(!rows.length)throw 0;
+ const seen=new Set(all().map(c=>c.q));let n=0;
+ rows.forEach(r=>{if(seen.has(r.q))return;seen.add(r.q);
+  S.my.push({id:"u"+Date.now()+"_"+n++,cat:String(r.cat||"未分類"),q:String(r.q),a:String(r.a).toUpperCase()===String(r.a)&&r.opts?String(r.a).toUpperCase():String(r.a),
+   opts:Array.isArray(r.opts)?r.opts.map(String):undefined,src:String(r.src||"")})});
+ save();$("ib").value="";$("istat").textContent=`✅ 新增 ${n} 題(重複或答案字母唔啱嘅會跳過)`;initCats()
+ }catch(e){$("istat").textContent="❌ 格式唔啱,冇匯入任何題目"}}
+$("qf").onchange=async e=>{$("ib").value=await e.target.files[0].text();e.target.value=""};
+function expMine(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S.my,null,1)]));a.download="我的習題.json";a.click()}
+function clrMine(){if(confirm("清空所有匯入嘅習題?")){S.my=[];save();initCats()}}
+
+/* ---------- PDF ---------- */
 const DB=new Promise((res,rej)=>{const r=indexedDB.open("s牌db",1);r.onupgradeneeded=()=>r.result.createObjectStore("files",{keyPath:"id"});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 async function tx(mode,f){const db=await DB;return new Promise((res,rej)=>{const t=db.transaction("files",mode);const q=f(t.objectStore("files"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})}
 $("pdf").onchange=async e=>{for(const f of e.target.files)await addPdf(f);e.target.value="";listMine()};
@@ -152,7 +203,7 @@ async function addPdf(file){
 async function listMine(){
  const fs=await tx("readonly",s=>s.getAll());
  $("files").innerHTML=fs.map(f=>`<div class="row"><b onclick="openPdf(${f.id},1)">${esc(f.name)}</b> <span class="mut">${f.n} 頁</span> <button onclick="del(${f.id})">刪除</button></div>`).join("")||'<p class="mut">未有檔案</p>';
- $("favs").innerHTML=S.fav.map((v,i)=>`<div class="row" onclick="openPdf(${v.f},${v.p})">⭐ ${esc(v.name)} · 第 ${v.p} 頁</div>`).join("")||'<p class="mut">未有收藏</p>'}
+ $("favs").innerHTML=S.fav.map(v=>`<div class="row" onclick="openPdf(${v.f},${v.p})">⭐ ${esc(v.name)} · 第 ${v.p} 頁</div>`).join("")||'<p class="mut">未有收藏</p>'}
 async function del(id){if(!confirm("刪除呢個檔案?"))return;await tx("readwrite",s=>s.delete(id));S.fav=S.fav.filter(v=>v.f!=id);save();listMine()}
 async function search(){
  const q=$("kw").value.trim().toLowerCase();if(!q)return;
@@ -178,7 +229,7 @@ function favCur(){const i=S.fav.findIndex(v=>v.f==cur.id&&v.p==cur.p);
  i>=0?S.fav.splice(i,1):S.fav.push({f:cur.id,p:cur.p,name:cur.name});save();showPg()}
 function closeV(){$("view").style.display="none";cur=null;listMine()}
 
-/* ---------- v0.4 離線 ---------- */
+/* ---------- 離線 ---------- */
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
 render();go(location.hash.slice(1)||"home");
 </script>
