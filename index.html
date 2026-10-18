@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="營業員試溫習通">
+<meta name="theme-color" content="#0f766e">
+<title>營業員試溫習通</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2430;--mut:#6b7686;--pri:#0f766e;--bd:#e3e7ec;--nav:64px}
+@media(prefers-color-scheme:dark){:root{--bg:#10151b;--card:#1a222c;--ink:#e8edf2;--mut:#93a0b0;--bd:#2a3542}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"PingFang HK",sans-serif}
+main{padding:16px 16px calc(var(--nav) + 24px + env(safe-area-inset-bottom));padding-top:calc(16px + env(safe-area-inset-top))}
+section{display:none}section.on{display:block}
+h1{font-size:22px;margin:0 0 12px}h2{font-size:17px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.big{font-size:44px;font-weight:700;color:var(--pri);line-height:1.1}
+.mut{color:var(--mut);font-size:14px}
+input[type=date]{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--ink)}
+label.ck{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
+label.ck input{width:22px;height:22px;accent-color:var(--pri)}
+a.link{display:block;padding:12px 0;border-top:1px solid var(--bd);color:var(--pri);text-decoration:none}
+nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;background:var(--card);border-top:1px solid var(--bd)}
+nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px}
+nav button b{display:block;font-size:20px;font-weight:400}
+nav button.on{
