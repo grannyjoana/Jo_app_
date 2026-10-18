@@ -25,4 +25,61 @@ a.link{display:block;padding:12px 0;border-top:1px solid var(--bd);color:var(--p
 nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;background:var(--card);border-top:1px solid var(--bd)}
 nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px}
 nav button b{display:block;font-size:20px;font-weight:400}
-nav button.on{
+nav button.on{color:var(--pri);font-weight:600}
+/* 橫向:變側欄,唔係放大桌面版 */
+@media(orientation:landscape) and (max-height:520px){
+ nav{top:0;right:auto;width:calc(88px + env(safe-area-inset-left));height:auto;flex-direction:column;border-top:0;border-right:1px solid var(--bd);padding:env(safe-area-inset-top) 0 0 env(safe-area-inset-left)}
+ main{margin-left:calc(88px + env(safe-area-inset-left));padding-bottom:24px;max-width:760px}
+}
+</style>
+</head>
+<body>
+<main>
+ <section id="home" class="on">
+  <h1>主頁</h1>
+  <div class="card"><h2>考試倒數</h2>
+   <div class="big" id="days">--</div>
+   <p class="mut" id="dtxt">請揀考試日期</p>
+   <input type="date" id="exam"></div>
+  <div class="card"><h2>溫習清單</h2><div id="list"></div>
+   <p class="mut" id="prog"></p></div>
+  <div class="card"><h2>備份</h2>
+   <button onclick="exp()">匯出</button>
+   <input type="file" id="imp" accept=".json" style="display:none">
+   <button onclick="imp.click()">匯入</button></div>
+ </section>
+ <section id="topics"><h1>專項</h1>
+  <div class="card">個案分析、虛構查冊、表格 1–6 點用、規管、轉易、租務(開發中)</div></section>
+ <section id="mine"><h1>我的資料</h1>
+  <div class="card">上傳 PDF、關鍵字搜尋、收藏(開發中)</div></section>
+ <section id="portal"><h1>官方入口</h1><div class="card" id="links"></div></section>
+ <section id="quiz"><h1>模擬試題</h1>
+  <div class="card">自編練習題(開發中,非官方題目)</div></section>
+</main>
+<nav id="nav"></nav>
+<script>
+const TABS=[["home","🏠","主頁"],["topics","🎯","專項"],["mine","📁","資料"],["portal","🔗","官方"],["quiz","✍️","模擬"]];
+const CHECK=["學習指引:前言、免責聲明","第一章 香港的地產代理行業","第二章 《地產代理條例》及附屬法例","第三章 其他規管法律及物業轉易程序","第四章 土地註冊、查冊及物業資料系統","第五章 樓宇知識、物業分類及物業管理","第七章 租契及租約事宜","附錄一 第四章附註","表格:物業資料表格(住宅買賣)","表格:出租資料表格(住宅出租)","表格:出售/購買/出租/承租 地產代理協議","做一次網上模擬試"];
+// 官方網址請自己貼上確實頁面,唔好靠估
+const LINKS=[["考試手冊頁","https://www.eaa.org.hk"],["網上模擬試","https://www.eaa.org.hk"],["通告目錄","https://www.eaa.org.hk"],["學習指引目錄","https://www.eaa.org.hk"]];
+const K="s牌v1",$=i=>document.getElementById(i);
+let S=JSON.parse(localStorage.getItem(K)||'{"exam":"","done":{}}');
+const save=()=>localStorage.setItem(K,JSON.stringify(S));
+function go(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id==id));
+ [...$("nav").children].forEach(b=>b.classList.toggle("on",b.dataset.t==id));history.replaceState(0,"","#"+id)}
+$("nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" onclick="go('${t[0]}')"><b>${t[1]}</b>${t[2]}</button>`).join("");
+$("links").innerHTML=LINKS.map(l=>`<a class="link" href="${l[1]}" target="_blank" rel="noopener">${l[0]} ↗</a>`).join("");
+function render(){
+ $("exam").value=S.exam;
+ if(S.exam){const d=Math.ceil((new Date(S.exam+"T00:00")-new Date().setHours(0,0,0,0))/864e5);
+  $("days").textContent=d>0?d+" 日":d==0?"今日考試!":"已過期";$("dtxt").textContent="考試日期:"+S.exam}
+ $("list").innerHTML=CHECK.map((c,i)=>`<label class="ck"><input type="checkbox" ${S.done[i]?"checked":""} onchange="tg(${i})">${c}</label>`).join("");
+ const n=Object.values(S.done).filter(Boolean).length;$("prog").textContent=`完成 ${n} / ${CHECK.length}`}
+function tg(i){S.done[i]=!S.done[i];save();render()}
+$("exam").onchange=e=>{S.exam=e.target.value;save();render()};
+function exp(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)]));a.download="s牌備份.json";a.click()}
+$("imp").onchange=async e=>{S=JSON.parse(await e.target.files[0].text());save();render()};
+render();go(location.hash.slice(1)||"home");
+</script>
+</body>
+</html>
